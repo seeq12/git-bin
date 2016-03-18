@@ -50,17 +50,14 @@ namespace GitBin
             var serializer = new YamlSerializer<GitBinDocument>();
             serializer.Serialize(stringWriter, document);
 
-            if (Environment.OSVersion.Platform == PlatformID.MacOSX ||
-                Environment.OSVersion.Platform == PlatformID.Unix)
-            {
-                sb.Replace("\n", "\r\n");
-            }
+            // Force line-endings to UNIX style (linefeed only) so that things are consistent across platforms
+            sb.Replace("\r\n", "\n");
 
             return sb.ToString();
         }
 
         /// <summary>
-        /// Desrialize a document from a yaml file.
+        /// Deserialize a document from a yaml file.
         /// </summary>
         /// <param name="textReader">Source of the yaml data.</param>
         /// <returns>The deserialized document.</returns>
