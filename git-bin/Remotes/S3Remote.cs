@@ -114,7 +114,16 @@ namespace GitBin.Remotes
                 }
                 else
                 {
-                    throw new ಠ_ಠ(GetMessageFromException(e));
+	                string errorMessage = string.Format(
+	                    "Error during upload:\n" +
+	                    "File:  {0}\n" +
+	                    "Key:   {1}\n" +
+	                    "Error: {2}",
+	                    fullPath,
+	                    key,
+	                    GetMessageFromException(e));
+
+	                throw new ಠ_ಠ(errorMessage);
                 }
             }
         }
@@ -168,7 +177,16 @@ namespace GitBin.Remotes
                 }
                 else
                 {
-                    throw new ಠ_ಠ(GetMessageFromException(e));
+	                string errorMessage = string.Format(
+	                    "Error during download:\n" +
+	                    "File:  {0}\n" +
+	                    "Key:   {1}\n" +
+	                    "Error: {2}",
+	                    fullPath,
+	                    key,
+	                    GetMessageFromException(e));
+
+	                throw new ಠ_ಠ(errorMessage);  
                 }
             }
         }
