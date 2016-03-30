@@ -138,36 +138,51 @@ namespace GitBin.Remotes
 
             try
             {
-                using (var getResponse = client.GetObject(getRequest))
+                int attemptCount = 0;
+                const int attemptMax = 3;
+                while (attemptCount < attemptMax)
                 {
-                    var fileContent = new byte[getResponse.ContentLength];
-
-                    if (getResponse.ContentLength > 0)
+                    try
                     {
-                        var numberOfBytesRead = 0;
-                        var totalBytesRead = 0;
-
-                        do
+                        using (var getResponse = client.GetObject(getRequest))
                         {
-                            numberOfBytesRead = getResponse.ResponseStream.Read(fileContent, totalBytesRead,
-                                fileContent.Length - totalBytesRead);
-                            if (numberOfBytesRead == 0)
+                            var fileContent = new byte[getResponse.ContentLength];
+
+                            if (getResponse.ContentLength > 0)
                             {
-                                throw new ಠ_ಠ(String.Format(
-                                    "S3 download stream ended before complete file was read: {0}", fileName));
+                                var numberOfBytesRead = 0;
+                                var totalBytesRead = 0;
+
+                                do
+                                {
+                                    numberOfBytesRead = getResponse.ResponseStream.Read(fileContent, totalBytesRead,
+                                        fileContent.Length - totalBytesRead);
+                                    if (numberOfBytesRead == 0)
+                                    {
+                                        throw new IOException(String.Format("S3 download stream ended before complete file was read: {0}", fileName));
+                                    }
+
+                                    totalBytesRead += numberOfBytesRead;
+                                    progressListener.Invoke((totalBytesRead * 100) / fileContent.Length);
+                                } while (totalBytesRead < fileContent.Length);
+                            }
+                            else
+                            {
+                                progressListener.Invoke(100);
                             }
 
-                            totalBytesRead += numberOfBytesRead;
-                            progressListener.Invoke((totalBytesRead * 100) / fileContent.Length);
-                        } while (totalBytesRead < fileContent.Length);
+                            return fileContent;
+                        }
                     }
-                    else
+                    catch (IOException)
                     {
-                        progressListener.Invoke(100);
+                        // Ignore this exception and allow retry mechanism to take place
                     }
 
-                    return fileContent;
+                    attemptCount++;
                 }
+
+                throw new ಠ_ಠ(String.Format("File could not be successfully download after {0} attempts: {1}", attemptMax, fileName));
             }
             catch (AmazonS3Exception e)
             {
