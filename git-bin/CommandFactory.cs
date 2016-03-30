@@ -4,9 +4,22 @@ using System.Linq;
 
 namespace GitBin
 {
+    /// <summary>
+    /// Helper methods to manage commands.
+    /// </summary>
     public interface ICommandFactory
     {
+        /// <summary>
+        /// Retrieve a command given the command line parameters passed into the application.
+        /// </summary>
+        /// <param name="args">Command line parameters passed into the application.</param>
+        /// <returns>Command specified in the provided command line parameters.</returns>
         ICommand GetCommand(string[] args);
+
+        /// <summary>
+        /// Retrieve the command used to print usage to the console.
+        /// </summary>
+        /// <returns>Command used to print usage to the console.</returns>
         ICommand GetShowUsageCommand();
     }
 

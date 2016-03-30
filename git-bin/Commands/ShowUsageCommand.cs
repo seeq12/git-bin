@@ -2,8 +2,14 @@
 
 namespace GitBin.Commands
 {
+    /// <summary>
+    /// Used to show the user what command options are present.
+    /// </summary>
     public class ShowUsageCommand : ICommand
     {
+        /// <summary>
+        /// Displays the git bin operations that can be executed.
+        /// </summary>
         public void Execute()
         {
             GitBinConsole.WriteLineNoPrefix("usage: git bin [--version]");

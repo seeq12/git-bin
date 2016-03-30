@@ -21,7 +21,7 @@ namespace git_bin.Tests.Commands
         {
             _cacheManager.Setup(x => x.ClearCache()).Verifiable();
 
-            var target = new ClearCommand(_cacheManager.Object, new[] {"-f"});
+            var target = new ClearCommand(_cacheManager.Object, new[] { "-f" });
             target.Execute();
 
             _cacheManager.Verify();
@@ -31,7 +31,7 @@ namespace git_bin.Tests.Commands
         public void Execute_DryRun_DoesNotClearCache()
         {
             // mock is strict, so calling ClearCache will throw
-            _cacheManager.Setup(x => x.ListFiles()).Returns(new GitBinFileInfo[0]);
+            _cacheManager.Setup(x => x.ListCachedChunks()).Returns(new GitBinFileInfo[0]);
 
             var target = new ClearCommand(_cacheManager.Object, new[] { "-n" });
             target.Execute();

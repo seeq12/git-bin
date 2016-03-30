@@ -2,22 +2,34 @@
 
 namespace GitBin
 {
+    /// <summary>
+    /// Representation of a file, including its name and size.
+    /// </summary>
     public class GitBinFileInfo
     {
+        /// <summary>
+        /// The name of the file.
+        /// </summary>
         public string Name { get; private set; }
-        public long Size { get; private set; }
 
-        public GitBinFileInfo(string name, long size)
+        /// <summary>
+        /// Size in bytes of the file.
+        /// </summary>
+        public long SizeInBytes { get; private set; }
+
+        /// <param name="name">Name of the file.</param>
+        /// <param name="size">Size in bytes of the file.</param>
+        public GitBinFileInfo(string name, long sizeInBytes)
         {
             this.Name = name;
-            this.Size = size;
+            this.SizeInBytes = sizeInBytes;
         }
 
         public bool Equals(GitBinFileInfo other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Equals(other.Name, Name) && other.Size == Size;
+            return Equals(other.Name, Name) && other.SizeInBytes == SizeInBytes;
         }
 
         public override bool Equals(object obj)
@@ -32,7 +44,7 @@ namespace GitBin
         {
             unchecked
             {
-                return ((Name != null ? Name.GetHashCode() : 0) * 397) ^ Size.GetHashCode();
+                return ((Name != null ? Name.GetHashCode() : 0) * 397) ^ SizeInBytes.GetHashCode();
             }
         }
     }

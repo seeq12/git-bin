@@ -35,7 +35,7 @@ namespace git_bin.Tests
             Func<ShowUsageCommand> factory = () => showUsageCommand;
 
             var target = new CommandFactory(factory, null, null, null, null, null, null, null);
-            var command = target.GetCommand(new []{"invalid"});
+            var command = target.GetCommand(new[] { "invalid" });
 
             Assert.AreSame(showUsageCommand, command);
         }
@@ -55,7 +55,7 @@ namespace git_bin.Tests
         [Test]
         public void GetCommand_CleanCommandArgument_ReturnsCleanCommand()
         {
-            var cleanCommand = new CleanCommand(null, null, new []{"abc"});
+            var cleanCommand = new CleanCommand(null, null, new[] { "abc" });
             Func<string[], CleanCommand> factory = x => cleanCommand;
 
             var target = new CommandFactory(null, null, null, factory, null, null, null, null);
@@ -68,7 +68,7 @@ namespace git_bin.Tests
         public void GetCommand_CleanCommandArgument_PassesTailOfArgumentArray()
         {
             bool wasInvoked = false;
-            var inputArguments = new[] { CommandFactory.CleanArgument, "testing"};
+            var inputArguments = new[] { CommandFactory.CleanArgument, "testing" };
 
             Func<string[], CleanCommand> factory = x =>
                                                        {
@@ -131,7 +131,7 @@ namespace git_bin.Tests
         [Test]
         public void GetCommand_ClearCommandArgument_ReturnsClearCommand()
         {
-            var clearCommand = new ClearCommand(null, new []{"-n"});
+            var clearCommand = new ClearCommand(null, new[] { "-n" });
             Func<string[], ClearCommand> factory = x => clearCommand;
 
             var target = new CommandFactory(null, null, null, null, null, null, null, factory);

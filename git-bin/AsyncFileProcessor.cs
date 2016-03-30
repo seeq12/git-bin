@@ -6,58 +6,74 @@ using System.Threading;
 
 namespace GitBin
 {
+    /// <summary>
+    /// A collection of methods that concurrently process files.
+    /// </summary>
     public static class AsyncFileProcessor
     {
-        public static void ProcessFiles(string[] filesToDownload, Action<string[], int> fileProcessor)
+        /// <summary>
+        /// Concurrently process the list of files with the given fileProcessor. Prints progress to the console. A
+        /// maximum of 10 current operations will take place.
+        /// </summary>
+        /// <param name="filesToProcess">List of files to process.</param>
+        /// <param name="fileProcessor">
+        /// Processor that will act on each file. The first parameter of the processor is the file to process, the
+        /// second parameter is a listener for progress information.
+        /// </param>
+        public static void ProcessFiles(string[] filesToProcess, Action<string, Action<int>> fileProcessor)
+        {
+            ProcessFiles(filesToProcess, 10, fileProcessor);
+        }
+
+        /// <summary>
+        /// Concurrently process the list of files with the given fileProcessor. Prints progress to the console.
+        /// </summary>
+        /// <param name="filesToProcess">List of files to process.</param>
+        /// <param name="maxSimultaneousProcessingOperations">Maximum number of concurrent operations.</param>
+        /// <param name="fileProcessor">
+        /// Processor that will act on each file. The first parameter of the processor is the file to process, the
+        /// second parameter is a listener for progress information.
+        /// </param>
+        public static void ProcessFiles(string[] filesToProcess, int maxSimultaneousProcessingOperations,
+            Action<string, Action<int>> fileProcessor)
         {
             object sync = new object();
+            RemoteProgressPrinter progressPrinter = new RemoteProgressPrinter(filesToProcess.Length);
 
-            int totalFinished = 0;
-
-            int nextIndexToDownload = 0;
-
-            int totalDownloading = 0;
-            int maxSimultaneousDownloads = 10;
+            int totalProcessing = 0;
+            int processedFiles = 0;
             Exception lastException = null;
-            int nextToReport = 10;
 
             lock (sync)
             {
-                while (nextIndexToDownload < filesToDownload.Length)
+                for (int indexToProcess = 0; indexToProcess < filesToProcess.Length; indexToProcess++)
                 {
-                    int indexToDownload = nextIndexToDownload;
-                    totalDownloading++;
+                    int scopedIndexToProcess = indexToProcess;
+                    totalProcessing++;
 
+                    // Add a new item to the work queue.
                     ThreadPool.QueueUserWorkItem(state =>
                     {
                         Exception exception = null;
+
                         try
                         {
-                            fileProcessor(filesToDownload, indexToDownload);
+                            fileProcessor(filesToProcess[scopedIndexToProcess], (percentComplete) =>
+                                progressPrinter.OnProgressChanged(scopedIndexToProcess, percentComplete));
                         }
                         catch (Exception e)
                         {
+                            // Catch any exception that might have happened while processing and store it so it can be
+                            // marshalled back to the invoker thread for throwing.
                             exception = e;
                         }
 
                         lock (sync)
                         {
-                            totalDownloading--;
-                            totalFinished++;
+                            totalProcessing--;
+                            processedFiles++;
 
-                            var percentCompleted = (int)(100 * totalFinished / (float)filesToDownload.Length);
-
-                            if (percentCompleted >= nextToReport)
-                            {
-                                GitBinConsole.WriteNoPrefix(percentCompleted.ToString());
-                                if (percentCompleted < 100)
-                                {
-                                    GitBinConsole.WriteNoPrefix(".");
-                                }
-                                nextToReport = percentCompleted + 10;
-                            }
-
-
+                            // Marshalled any exeptions back to the invoker thread for throwing.
                             if (lastException == null)
                             {
                                 lastException = exception;
@@ -67,24 +83,29 @@ namespace GitBin
                         }
                     });
 
-                    while (lastException == null && totalDownloading >= maxSimultaneousDownloads)
+                    // Wait for the number of outstanding operations to go lower than our max amount.
+                    while (lastException == null && totalProcessing >= maxSimultaneousProcessingOperations)
                     {
                         Monitor.Wait(sync);
                     }
 
+                    // If an exception occurred on the worker thread, throw it.
                     if (lastException != null)
                     {
                         throw lastException;
                     }
-
-                    nextIndexToDownload++;
                 }
 
-                while (lastException == null && totalFinished < filesToDownload.Length)
+                // Wait until all outstanding operations are complete.
+                while (lastException == null && processedFiles < filesToProcess.Length)
                 {
                     Monitor.Wait(sync);
                 }
 
+                // Tell progress printer we're done with it.
+                progressPrinter.Dispose();
+
+                // If an exception occurred on the worker thread, throw it.
                 if (lastException != null)
                 {
                     throw lastException;

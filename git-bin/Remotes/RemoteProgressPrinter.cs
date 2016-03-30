@@ -4,48 +4,55 @@ using System.Linq;
 
 namespace GitBin.Remotes
 {
+    /// <summary>
+    /// Prints progress percentage to the console.
+    /// </summary>
     public class RemoteProgressPrinter : IDisposable
     {
-        private readonly IRemote _remote;
-        private readonly List<int> _percentagesToReport;
-        private bool _hasPrintedAnything;
+        private readonly int _fileCount;
+        private readonly int[] mostRecentFilePercentages;
+        private int summedFilePercentage = 0;
 
-        public RemoteProgressPrinter(int chunkNumber, int totalChunks, IRemote remote)
+        private string lastPrintedStatusString = "";
+
+        /// <param name="chunkCount">The number of files that this progress printer will be tracking.</param>
+        public RemoteProgressPrinter(int fileCount)
         {
-            GitBinConsole.WriteNoPrefix("  [{0}/{1}] -> ", chunkNumber, totalChunks);
-
-            _remote = remote;
-            _remote.ProgressChanged += OnProgressChanged;
-
-            _percentagesToReport = new List<int>{0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
+            _fileCount = fileCount;
+            mostRecentFilePercentages = Enumerable.Repeat(0, fileCount).ToArray();
         }
 
         public void Dispose()
         {
             GitBinConsole.WriteNoPrefix(Environment.NewLine);
-
-            _remote.ProgressChanged -= OnProgressChanged;
         }
 
-        private void OnProgressChanged(int percentageComplete)
+        /// <summary>
+        /// Method that should be called when progress changes for a file. Prints the total percentage (for all files)
+        /// to the console.
+        /// </summary>
+        /// <param name="fileNumber">
+        /// The number (from 0 to the count provided in the constructor) of the file whose
+        /// progress has changed.
+        /// </param>
+        /// <param name="percentageComplete">Percentage complete (0-100).</param>
+        public void OnProgressChanged(int fileNumber, int percentageComplete)
         {
-            var percentagesToPrint = GetPercentagesBelowOrEqual(percentageComplete);
-
-            foreach (var percentToPrint in percentagesToPrint)
+            lock (this)
             {
-                GitBinConsole.WriteNoPrefix("{0}{1}", _hasPrintedAnything ? ".." : string.Empty, percentToPrint);
-                _hasPrintedAnything = true;
-                _percentagesToReport.Remove(percentToPrint);
+                var chunkProgressDelta = percentageComplete - mostRecentFilePercentages[fileNumber];
+                mostRecentFilePercentages[fileNumber] = percentageComplete;
+                summedFilePercentage += chunkProgressDelta;
+                double totalPercentage = (double)summedFilePercentage / _fileCount;
+
+                string percentageToPrint = String.Format("{0:N2}% ", totalPercentage);
+
+                GitBinConsole.WriteNoPrefix(new String('\b', lastPrintedStatusString.Length) + percentageToPrint);
+                GitBinConsole.Flush();
+
+                lastPrintedStatusString = percentageToPrint;
             }
 
-            GitBinConsole.Flush();
-        }
-
-        private List<int> GetPercentagesBelowOrEqual(int percent)
-        {
-            return _percentagesToReport
-                .TakeWhile(x => x <= percent)
-                .ToList();
         }
     }
 }

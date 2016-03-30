@@ -4,12 +4,25 @@ using System.Text;
 
 namespace GitBin.Commands
 {
+    /// <summary>
+    /// Takes the data files, breaks it up into chunks and creates a yaml file to be placed in git.
+    /// </summary>
     public class CleanCommand : ICommand
     {
         private readonly IConfigurationProvider _configurationProvider;
         private readonly ICacheManager _cacheManager;
         private readonly string _filename;
 
+        /// <param name="configurationProvider">
+        /// Provides the necessary configurations for remote and local actions.
+        /// </param>
+        /// <param name="cacheManager">
+        /// Manages the local cache and provides a set of methods to interface with the  local cahce.
+        /// </param>
+        /// <param name="args">
+        /// Specified file to be cleaned passed down from the terminal. There should only be one specifing which folder
+        /// to look in.
+        /// </param>
         public CleanCommand(
             IConfigurationProvider configurationProvider,
             ICacheManager cacheManager,
@@ -24,6 +37,10 @@ namespace GitBin.Commands
             _filename = args[0];
         }
 
+        /// <summary>
+        /// Reads in the file contents, breaks it up into chunks, writes to the local cache, and creates the yaml file 
+        /// to be stored the git repo. 
+        /// </summary>
         public void Execute()
         {
             GitBinConsole.WriteLine("Cleaning {0}", _filename);
@@ -31,22 +48,21 @@ namespace GitBin.Commands
             var document = new GitBinDocument(_filename);
 
             var chunkBuffer = new byte[_configurationProvider.ChunkSize];
-            int numberOfBytesRead;
-            int totalBytesInChunk = 0;
+            var numberOfBytesRead = 0;
+            var totalBytesInChunk = 0;
 
             var stdin = Console.OpenStandardInput();
 
             do
             {
                 numberOfBytesRead = stdin.Read(chunkBuffer, totalBytesInChunk, chunkBuffer.Length - totalBytesInChunk);
-                
                 totalBytesInChunk += numberOfBytesRead;
 
                 if ((totalBytesInChunk == chunkBuffer.Length || numberOfBytesRead == 0) && totalBytesInChunk > 0)
                 {
-                    var hash = GetHashForChunk(chunkBuffer, totalBytesInChunk);
-                    _cacheManager.WriteFileToCache(hash, chunkBuffer, totalBytesInChunk);
-                    document.RecordChunk(hash);
+                    var chunkHash = _cacheManager.WriteChunkToCache(chunkBuffer, totalBytesInChunk);
+
+                    document.RecordChunk(chunkHash);
                     totalBytesInChunk = 0;
                 }
             } while (numberOfBytesRead > 0);
@@ -55,16 +71,6 @@ namespace GitBin.Commands
 
             Console.Write(yamlString);
             Console.Out.Flush();
-        }
-
-        private static string GetHashForChunk(byte[] chunkBuffer, int chunkLength)
-        {
-            var hasher = new SHA256Managed();
-
-            byte[] hashBytes = hasher.ComputeHash(chunkBuffer, 0, chunkLength);
-            var hashString = BitConverter.ToString(hashBytes).Replace("-", String.Empty);
-
-            return hashString;
         }
     }
 }

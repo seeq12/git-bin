@@ -53,13 +53,12 @@ $ ls -lh brooklyn_bridge.jpg
 $ git add brooklyn_bridge.jpg
 [git-bin] Cleaning brooklyn_bridge.jpg
 
-$ git commit -m "Added JPG that's manage by git-bin"
-[dev 6adb9c6] Added JPG that's manage by git-bin
+$ git commit -m "Added JPG that is manage by git-bin"
+[dev 6adb9c6] Added JPG that is manage by git-bin
 <snip>
  
 $ git bin push
-[git-bin] Uploading 1 chunks...
-  [0/1] -> 0..10..20..30..40..50..60..70..80..90..100
+[git-bin] Uploading 1 chunk: 100.00%
 
 $ git push
 <snip>
@@ -72,8 +71,7 @@ When you or someone else on the team checks out a file it will either be pulled 
 $ git pull
 <snip>
 Updating dc53749..6adb9c6
-[git-bin] Smudging brooklyn_bridge.jpg... Downloading 1 chunks...
-  [0/1] -> 0..10..20..30..40..50..60..70..80..90..100
+[git-bin] Smudging brooklyn_bridge.jpg: Downloading 1 chunk: 100.00%
 Fast-forward
  brooklyn_bridge.jpg |  Bin 0 -> 222616 bytes
  1 files changed, 0 insertions(+), 0 deletions(-)
@@ -96,6 +94,12 @@ When a file is checked out the YAML gets passed to the smudge filter. The smudge
 
 ## Optional configuration
 
+Enforces the Git command to fail when git-bin fails. Forces Git to pay attention to a git-bin error.
+
+```bash
+$ git config --global filter.bin.required true
+```
+
 The chunk size defaults to 1M. If you want to change this for some reason you can set it like any other value in your git config:
 
 ```bash
@@ -108,3 +112,18 @@ git has a setting called `core.bigFileThreshold` that it uses to try to deal wit
 $ git config --global core.bigFileThreshold 2g
 ```
 
+When communicating with S3, the default protocol is HTTPS. This protocol doesn't always work,
+particularly with proxy servers, so you can fall back to the (less secure) HTTP protocol:
+
+```bash
+$ git config --global git-bin.protocol HTTP
+```
+
+You can configure where the git-bin cache is located. By default, it is the .git/git-bin folder
+within your repo. If you put it outside the repo (say, in ~/git-bin-cache) then you won't
+re-download all the chunks if you have to blow away your repo and re-clone. This is also useful
+if you want to pre-populate a build machine image with the majority of the chunks.
+
+```bash
+$ git config --global git-bin.cacheDirectory ~/git-bin-cache
+```

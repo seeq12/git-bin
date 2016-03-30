@@ -5,25 +5,64 @@ using GitBin.Remotes;
 
 namespace GitBin
 {
+    /// <summary>
+    /// A single location to store all user-configurable options of this program.
+    /// </summary>
     public interface IConfigurationProvider
     {
+        /// <summary>
+        /// Maximum size (in bytes) of a chunk.
+        /// </summary>
         long ChunkSize { get; }
-        long MaximumCacheSize { get; }
+
+        /// <summary>
+        /// Transport protocol to use when communication with S3. Either HTTPS or HTTP.
+        /// </summary>
+        string Protocol { get; }
+
+        /// <summary>
+        /// Local directory to use for chunk storage.
+        /// </summary>
         string CacheDirectory { get; }
 
-        long GetLong(string name, long defaultValue);
-        string GetString(string name);
+        /// <summary>
+        /// S3 system name that will be used when communicating with S3. Examples: "us-east-1", "us-west-2"
+        /// </summary>
+        string S3SystemName { get; }
+
+        /// <summary>
+        /// S3 bucket (folder) that will be used to store and retrieve chunks.
+        /// </summary>
+        string S3Bucket { get; }
+
+        /// <summary>
+        /// S3 key (username) that will be used to authenticate with S3.
+        /// </summary>
+        string S3Key { get; }
+
+        /// <summary>
+        /// S3 secret key (password) that will be used to authenticate with S3.
+        /// </summary>
+        string S3SecretKey { get; }
     }
 
     public class ConfigurationProvider : IConfigurationProvider
     {
         public const long DefaultChunkSize = 1024 * 1024;
         public const long DefaultMaximumCacheSize = long.MaxValue;
+        public const string DefaultProtocol = "HTTPS";
+        public const string DefaultCacheDirectory = "git-bin";
+        public const string DefaultS3SystemName = "us-east-1";
 
-        public const string DirectoryName = "git-bin";
         public const string SectionName = "git-bin";
         public const string ChunkSizeConfigName = "chunkSize";
         public const string MaximumCacheSizeConfigName = "maxCacheSize";
+        public const string ProtocolName = "protocol";
+        public const string CacheDirectoryConfigName = "cacheDirectory";
+        public const string S3SystemConfigName = "s3SystemName";
+        public const string S3BucketConfigName = "s3bucket";
+        public const string S3KeyConfigName = "s3key";
+        public const string S3SecretKeyConfigName = "s3secretKey";
 
         private readonly IGitExecutor _gitExecutor;
         private readonly Dictionary<string, string> _configurationOptions;
@@ -31,6 +70,11 @@ namespace GitBin
         public long ChunkSize { get; private set; }
         public long MaximumCacheSize { get; private set; }
         public string CacheDirectory { get; private set; }
+        public string Protocol { get; private set; }
+        public string S3SystemName { get; private set; }
+        public string S3Bucket { get; private set; }
+        public string S3Key { get; private set; }
+        public string S3SecretKey { get; private set; }
 
         public ConfigurationProvider(IGitExecutor gitExecutor)
         {
@@ -38,9 +82,15 @@ namespace GitBin
 
             _configurationOptions = GetConfigurationOptions();
 
-            this.CacheDirectory = GetCacheDirectory();
             this.ChunkSize = GetLong(ChunkSizeConfigName, DefaultChunkSize);
             this.MaximumCacheSize = GetLong(MaximumCacheSizeConfigName, DefaultMaximumCacheSize);
+            this.Protocol = GetString(ProtocolName, DefaultProtocol);
+            this.CacheDirectory = GetCacheDirectory(GetString(CacheDirectoryConfigName, DefaultCacheDirectory));
+
+            this.S3SystemName = GetString(S3SystemConfigName, DefaultS3SystemName);
+            this.S3Bucket = GetString(S3BucketConfigName);
+            this.S3Key = GetString(S3KeyConfigName);
+            this.S3SecretKey = GetString(S3SecretKeyConfigName);
         }
 
         private Dictionary<string, string> GetConfigurationOptions()
@@ -68,7 +118,7 @@ namespace GitBin
             return options;
         }
 
-        public long GetLong(string name, long defaultValue)
+        private long GetLong(string name, long defaultValue)
         {
             string rawValue;
 
@@ -83,24 +133,37 @@ namespace GitBin
             return convertedValue;
         }
 
-        public string GetString(string name)
+        private string GetString(string name)
+        {
+            return GetString(name, null);
+        }
+
+        private string GetString(string name, string defaultValue)
         {
             string rawValue;
 
             if (!_configurationOptions.TryGetValue(name.ToLowerInvariant(), out rawValue))
-                throw new ಠ_ಠ('[' + name + "] must be set");
+            {
+                if (defaultValue != null)
+                    return defaultValue;
+                else
+                    throw new ಠ_ಠ('[' + name + "] must be set");
+            }
 
             return rawValue;
         }
 
-        private string GetCacheDirectory()
+        private string GetCacheDirectory(string path)
         {
+            if (Path.IsPathRooted(path) == true)
+                return path;
+
             var rawValue = _gitExecutor.GetString("rev-parse --git-dir");
 
             if (string.IsNullOrEmpty(rawValue))
                 throw new ಠ_ಠ("Error determining .git directory");
 
-            return Path.Combine(rawValue, DirectoryName);
+            return Path.Combine(rawValue, path);
         }
     }
 }

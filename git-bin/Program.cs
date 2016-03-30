@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using System.Threading;
 using Objector;
 
 namespace GitBin
@@ -8,12 +8,23 @@ namespace GitBin
     {
         static int Main(string[] args)
         {
+            if (Environment.GetEnvironmentVariable("GIT_BIN_ATTACH_DEBUGGER"))
+            {
+                GitBinConsole.WriteLine("Waiting for debugger to attach to this process (PID: {0})", System.Diagnostics.Process.GetCurrentProcess().Id);
+                while (System.Diagnostics.Debugger.IsAttached == false)
+                {
+                    Thread.Sleep(500);
+                }
+                System.Diagnostics.Debugger.Break();
+            }
+
             try
             {
+                // Build the list of available commands and execute the one requested in the user-provided args.
                 var builder = new Builder();
                 ApplicationRegistrations.Register(builder);
                 var container = builder.Create();
-            
+
                 var commandFactory = container.Resolve<ICommandFactory>();
 
                 var command = commandFactory.GetCommand(args);

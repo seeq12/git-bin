@@ -22,17 +22,17 @@ namespace git_bin.Tests.Commands
         [Test]
         public void Ctor_OneArgument_DoesNotThrow()
         {
-            Assert.DoesNotThrow(() => 
+            Assert.DoesNotThrow(() =>
                 new CleanCommand(
                     _configurationProvider.Object,
                     _cacheManager.Object,
-                    new[] {"filename"}));
+                    new[] { "filename" }));
         }
 
         [Test]
         public void Ctor_WrongNumberOfArguments_Throws()
         {
-            Assert.Throws<ArgumentException>(() => 
+            Assert.Throws<ArgumentException>(() =>
                 new CleanCommand(
                     _configurationProvider.Object,
                     _cacheManager.Object,
@@ -42,7 +42,7 @@ namespace git_bin.Tests.Commands
                 new CleanCommand(
                     _configurationProvider.Object,
                     _cacheManager.Object,
-                    new[] {"a", "b", "c"}));
+                    new[] { "a", "b", "c" }));
         }
     }
 }
