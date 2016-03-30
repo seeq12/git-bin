@@ -119,8 +119,8 @@ namespace GitBin.Remotes
 	                    "File:  {0}\n" +
 	                    "Key:   {1}\n" +
 	                    "Error: {2}",
-	                    fullPath,
-	                    key,
+                        sourceFilePath,
+                        destinationFileName,
 	                    GetMessageFromException(e));
 
 	                throw new ಠ_ಠ(errorMessage);
@@ -140,6 +140,7 @@ namespace GitBin.Remotes
             {
                 int attemptCount = 0;
                 const int attemptMax = 3;
+                Exception lastException = null;
                 while (attemptCount < attemptMax)
                 {
                     try
@@ -174,15 +175,16 @@ namespace GitBin.Remotes
                             return fileContent;
                         }
                     }
-                    catch (IOException)
+                    catch (IOException e)
                     {
                         // Ignore this exception and allow retry mechanism to take place
+                        lastException = e;
                     }
 
                     attemptCount++;
                 }
 
-                throw new ಠ_ಠ(String.Format("File could not be successfully download after {0} attempts: {1}", attemptMax, fileName));
+                throw new ಠ_ಠ(String.Format("File could not be successfully download after {0} attempts: {1}\n{2}", attemptMax, fileName, lastException));
             }
             catch (AmazonS3Exception e)
             {
@@ -194,11 +196,9 @@ namespace GitBin.Remotes
                 {
 	                string errorMessage = string.Format(
 	                    "Error during download:\n" +
-	                    "File:  {0}\n" +
-	                    "Key:   {1}\n" +
-	                    "Error: {2}",
-	                    fullPath,
-	                    key,
+	                    "Key:   {0}\n" +
+	                    "Error: {1}",
+                        fileName,
 	                    GetMessageFromException(e));
 
 	                throw new ಠ_ಠ(errorMessage);  

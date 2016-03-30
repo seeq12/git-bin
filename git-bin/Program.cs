@@ -8,7 +8,7 @@ namespace GitBin
     {
         static int Main(string[] args)
         {
-            if (Environment.GetEnvironmentVariable("GIT_BIN_ATTACH_DEBUGGER"))
+            if (Environment.GetEnvironmentVariable("GIT_BIN_ATTACH_DEBUGGER") != null)
             {
                 GitBinConsole.WriteLine("Waiting for debugger to attach to this process (PID: {0})", System.Diagnostics.Process.GetCurrentProcess().Id);
                 while (System.Diagnostics.Debugger.IsAttached == false)
