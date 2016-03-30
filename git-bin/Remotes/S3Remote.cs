@@ -184,7 +184,7 @@ namespace GitBin.Remotes
                     attemptCount++;
                 }
 
-                throw new ಠ_ಠ(String.Format("File could not be successfully download after {0} attempts: {1}\n{2}", attemptMax, fileName, lastException));
+                throw new ಠ_ಠ(String.Format("File could not be successfully downloaded after {0} attempts: {1}\n{2}", attemptMax, fileName, lastException));
             }
             catch (AmazonS3Exception e)
             {
