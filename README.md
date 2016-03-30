@@ -127,3 +127,13 @@ if you want to pre-populate a build machine image with the majority of the chunk
 ```bash
 $ git config --global git-bin.cacheDirectory ~/git-bin-cache
 ```
+
+## Debugging
+
+To debug git-bin, set the following environment variable in your console:
+
+```bash
+$ export GIT_BIN_ATTACH_DEBUGGER=true
+```
+
+Then, from Visual Studio, attach to the process that is displayed in the console.
