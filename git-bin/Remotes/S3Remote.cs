@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
-using System.Security.Cryptography;
-using System.Data;
-using Amazon.Runtime;
 
 namespace GitBin.Remotes
 {
@@ -206,11 +205,9 @@ namespace GitBin.Remotes
             }
         }
 
-        private IAmazonS3 GetClient()
-        {
-            if (_client == null)
-            {
-                _client = AWSClientFactory.CreateAmazonS3Client(_key, _secretKey, _s3config);
+        private IAmazonS3 GetClient() {
+            if (_client == null) {
+                _client = new AmazonS3Client(_key, _secretKey, _s3config);
             }
 
             return _client;
